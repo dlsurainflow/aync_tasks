@@ -104,6 +104,12 @@ async function deviceEvent(payload) {
             altitude = payload.data.ALT1.value;
           else altitude = null;
 
+          let point = {
+            type: "Point",
+            coordinates: [ayload.data.LNG1.value, payload.data.LAT1.value],
+            crs: { type: "name", properties: { name: "EPSG:4326" } },
+          };
+
           RAFT.create({
             latitude: payload.data.LAT1.value,
             longitude: payload.data.LNG1.value,
@@ -117,6 +123,7 @@ async function deviceEvent(payload) {
             deviceID: payload.deviceID,
             tenantID: payload.tenantID,
             username: user.username,
+            position: point,
           })
             .then((res) =>
               console.log(
@@ -137,6 +144,12 @@ async function deviceEvent(payload) {
             altitude = payload.data.ALT1.value;
           else altitude = null;
 
+          let point = {
+            type: "Point",
+            coordinates: [payload.data.LNG1.value, payload.data.LAT1.value],
+            crs: { type: "name", properties: { name: "EPSG:4326" } },
+          };
+
           RAFT.update(
             {
               latitude: payload.data.LAT1.value,
@@ -148,6 +161,7 @@ async function deviceEvent(payload) {
               temperature: temperature,
               pressure: pressure,
               humidity: humidity,
+              position: point,
             },
             {
               where: { id: raft.id },
@@ -186,7 +200,7 @@ async function updateDevice(payload) {
   } else {
     var sql = `SELECT * FROM device_events WHERE "deviceID" = '${payload.deviceID}' ORDER BY "msgTime" DESC`;
 
-    client.query(sql, (err, res) => {
+    client.query(sql, async (err, res) => {
       if (err) console.err(err);
       if (res !== undefined) {
         if (
@@ -210,8 +224,48 @@ async function updateDevice(payload) {
             altitude = res.rows[0].data.ALT1.value;
           else altitude = null;
 
-          RAFT.upsert(
-            {
+          let point = {
+            type: "Point",
+            coordinates: [
+              res.rows[0].data.LNG1.value,
+              res.rows[0].data.LAT1.value,
+            ],
+            crs: { type: "name", properties: { name: "EPSG:4326" } },
+          };
+
+          var raft = await RAFT.findOne({
+            where: { deviceID: payload.deviceID },
+          });
+
+          if (raft !== null) {
+            RAFT.update(
+              {
+                latitude: res.rows[0].data.LAT1.value,
+                longitude: res.rows[0].data.LNG1.value,
+                altitude: altitude,
+                flood_depth: res.rows[0].data.FD1.value,
+                rainfall_amount: res.rows[0].data.RA1.value,
+                rainfall_rate: res.rows[0].data.RR1.value,
+                temperature: temperature,
+                pressure: pressure,
+                humidity: humidity,
+                position: point,
+              },
+              {
+                where: { id: raft.id },
+              }
+            )
+              .then((res) =>
+                console.log(
+                  "[ASYNC_TASK] Device " + payload.deviceID + " updated!"
+                )
+              )
+              .catch((err) => console.error(err));
+          } else {
+            let user = await User.findOne({
+              where: { tenantID: res.rows[0].tenantID },
+            });
+            RAFT.create({
               latitude: res.rows[0].data.LAT1.value,
               longitude: res.rows[0].data.LNG1.value,
               altitude: altitude,
@@ -221,17 +275,18 @@ async function updateDevice(payload) {
               temperature: temperature,
               pressure: pressure,
               humidity: humidity,
-            },
-            {
-              where: { deviceID: payload.deviceID },
-            }
-          )
-            .then((res) =>
-              console.log(
-                "[ASYNC_TASK] Device " + payload.deviceID + " created!"
+              position: point,
+              deviceID: res.rows[0].deviceID,
+              tenantID: res.rows[0].tenantID,
+              username: user.username,
+            })
+              .then((res) =>
+                console.log(
+                  "[ASYNC_TASK] Device " + payload.deviceID + " created!"
+                )
               )
-            )
-            .catch((err) => console.error(err));
+              .catch((err) => console.error(err));
+          }
         }
       }
     });

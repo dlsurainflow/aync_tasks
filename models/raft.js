@@ -26,6 +26,7 @@ module.exports = (sequelize, DataTypes) => {
       tenantID: DataTypes.STRING,
       polyID: DataTypes.STRING,
       username: DataTypes.STRING,
+      position: DataTypes.GEOMETRY("POINT", 4326),
     },
     {
       sequelize,
