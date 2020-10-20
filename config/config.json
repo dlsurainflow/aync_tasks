@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "tammy",
+    "password": "Inmediasres8!",
+    "database": "rainflow",
+    "host": "rainflow.live",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "tammy",
+    "password": "Inmediasres8!",
+    "database": "rainflow",
+    "host": "rainflow.live",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "tammy",
+    "password": "Inmediasres8!",
+    "database": "rainflow",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  }
+}
