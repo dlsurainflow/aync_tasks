@@ -22,6 +22,7 @@ module.exports = (sequelize, DataTypes) => {
       rainfall_rate: DataTypes.DOUBLE,
       flood_depth: DataTypes.DOUBLE,
       image: DataTypes.STRING,
+      position: DataTypes.GEOMETRY("POINT", 4326),
     },
     {
       sequelize,
