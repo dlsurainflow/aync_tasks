@@ -4,6 +4,13 @@ const Op = Sequelize.Op;
 const { Pool, Client } = require("pg");
 const moment = require("moment");
 const report = require("./models/report");
+const NodeGeocoder = require("node-geocoder");
+
+const options = {
+  provider: "openstreetmap",
+};
+
+const geocoder = NodeGeocoder(options);
 
 const client = new Client({
   user: "tammy",
@@ -110,6 +117,11 @@ async function deviceEvent(payload) {
             crs: { type: "name", properties: { name: "EPSG:4326" } },
           };
 
+          const address = await geocoder.reverse({
+            lat: payload.data.LAT1.value,
+            lon: payload.data.LNG1.value
+          });
+
           RAFT.create({
             latitude: payload.data.LAT1.value,
             longitude: payload.data.LNG1.value,
@@ -124,6 +136,7 @@ async function deviceEvent(payload) {
             tenantID: payload.tenantID,
             username: user.username,
             position: point,
+            address: address,
           })
             .then((res) =>
               console.log(
@@ -150,6 +163,11 @@ async function deviceEvent(payload) {
             crs: { type: "name", properties: { name: "EPSG:4326" } },
           };
 
+          const address = await geocoder.reverse({
+            lat: payload.data.LAT1.value,
+            lon: payload.data.LNG1.value,
+          });
+
           RAFT.update(
             {
               latitude: payload.data.LAT1.value,
@@ -162,6 +180,7 @@ async function deviceEvent(payload) {
               pressure: pressure,
               humidity: humidity,
               position: point,
+              address: address,
             },
             {
               where: { id: raft.id },
@@ -174,6 +193,12 @@ async function deviceEvent(payload) {
             )
             .catch((err) => console.error(err));
         }
+      } else if (
+        payload.data.LAT1 !== undefined &&
+        payload.data.LNG1 !== undefined &&
+        payload.data.WL1 !== undefined
+      ) {
+        console.log("WATER LEVEL TEST");
       }
     } else {
       console.log("is Undefined");
@@ -237,6 +262,11 @@ async function updateDevice(payload) {
             where: { deviceID: payload.deviceID },
           });
 
+          const address = await geocoder.reverse({
+            lat: res.rows[0].data.LAT1.value,
+            lon: res.rows[0].data.LNG1.value,
+          });
+
           if (raft !== null) {
             RAFT.update(
               {
@@ -250,6 +280,7 @@ async function updateDevice(payload) {
                 pressure: pressure,
                 humidity: humidity,
                 position: point,
+                address: address,
               },
               {
                 where: { id: raft.id },
@@ -279,6 +310,7 @@ async function updateDevice(payload) {
               deviceID: res.rows[0].deviceID,
               tenantID: res.rows[0].tenantID,
               username: user.username,
+              address: address,
             })
               .then((res) =>
                 console.log(
