@@ -27,6 +27,8 @@ module.exports = (sequelize, DataTypes) => {
       polyID: DataTypes.STRING,
       username: DataTypes.STRING,
       position: DataTypes.GEOMETRY("POINT", 4326),
+      address: DataTypes.STRING,
+      water_level: DataTypes.FLOAT,
     },
     {
       sequelize,
