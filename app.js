@@ -122,6 +122,8 @@ async function deviceEvent(payload) {
             lon: payload.data.LNG1.value,
           });
 
+          console.log(address);
+
           RAFT.create({
             latitude: payload.data.LAT1.value,
             longitude: payload.data.LNG1.value,
@@ -136,7 +138,7 @@ async function deviceEvent(payload) {
             tenantID: payload.tenantID,
             username: user.username,
             position: point,
-            address: address,
+            address: address.formattedAddress,
           })
             .then((res) =>
               console.log(
@@ -180,7 +182,7 @@ async function deviceEvent(payload) {
               pressure: pressure,
               humidity: humidity,
               position: point,
-              address: address,
+              address: address.formattedAddress,
             },
             {
               where: { id: raft.id },
@@ -266,7 +268,6 @@ async function updateDevice(payload) {
             lat: res.rows[0].data.LAT1.value,
             lon: res.rows[0].data.LNG1.value,
           });
-
           if (raft !== null) {
             RAFT.update(
               {
@@ -280,7 +281,7 @@ async function updateDevice(payload) {
                 pressure: pressure,
                 humidity: humidity,
                 position: point,
-                address: address,
+                address: address.formattedAddress,
               },
               {
                 where: { id: raft.id },
@@ -310,7 +311,7 @@ async function updateDevice(payload) {
               deviceID: res.rows[0].deviceID,
               tenantID: res.rows[0].tenantID,
               username: user.username,
-              address: address,
+              address: address.formattedAddress,
             })
               .then((res) =>
                 console.log(
