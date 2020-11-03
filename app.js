@@ -82,7 +82,7 @@ async function deviceEvent(payload) {
 
   var sql = `SELECT * FROM devices where "deviceID" = '${payload.deviceID}' AND "showOnMap" = 1`;
 
-  await client.query(sql, (err, res) => {
+  await client.query(sql, async (err, res) => {
     if (err) throw err;
 
     //console.log("showOnMap =", res.rows[0].showOnMap);
@@ -119,7 +119,7 @@ async function deviceEvent(payload) {
 
           const address = await geocoder.reverse({
             lat: payload.data.LAT1.value,
-            lon: payload.data.LNG1.value
+            lon: payload.data.LNG1.value,
           });
 
           RAFT.create({
