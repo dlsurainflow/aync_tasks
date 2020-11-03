@@ -88,7 +88,7 @@ async function deviceEvent(payload) {
     //console.log("showOnMap =", res.rows[0].showOnMap);
     // console.log(res.rows[0]);
     var isShowOnMap = res.rows[0];
-
+    // console.log(isShowOnMap);
     if (isShowOnMap !== undefined) {
       //   console.log("not undefined");
       if (
@@ -99,7 +99,7 @@ async function deviceEvent(payload) {
         payload.data.RR1 !== undefined
       ) {
         if (raft === null) {
-          var temperature, pressure, humidity, altitude;
+          var temperature, pressure, humidity, altitude, water_level;
           if (payload.data.TMP1 !== undefined)
             temperature = payload.data.TMP1.value;
           else temperature = null;
@@ -110,10 +110,13 @@ async function deviceEvent(payload) {
           if (payload.data.ALT1 !== undefined)
             altitude = payload.data.ALT1.value;
           else altitude = null;
+          if (payload.data.WL1 !== undefined)
+            water_level = payload.data.WL1.value;
+          else water_level = null;
 
           let point = {
             type: "Point",
-            coordinates: [ayload.data.LNG1.value, payload.data.LAT1.value],
+            coordinates: [payload.data.LNG1.value, payload.data.LAT1.value],
             crs: { type: "name", properties: { name: "EPSG:4326" } },
           };
 
@@ -140,6 +143,7 @@ async function deviceEvent(payload) {
             username: user.username,
             position: point,
             address: address[0].formattedAddress,
+            water_level: water_level,
           })
             .then((res) =>
               console.log(
@@ -148,7 +152,7 @@ async function deviceEvent(payload) {
             )
             .catch((err) => console.error(err));
         } else {
-          var temperature, pressure, humidity, altitude;
+          var temperature, pressure, humidity, altitude, water_level;
           if (payload.data.TMP1 !== undefined)
             temperature = payload.data.TMP1.value;
           else temperature = null;
@@ -159,6 +163,9 @@ async function deviceEvent(payload) {
           if (payload.data.ALT1 !== undefined)
             altitude = payload.data.ALT1.value;
           else altitude = null;
+          if (payload.data.WL1 !== undefined)
+            water_level = payload.data.WL1.value;
+          else water_level = null;
 
           let point = {
             type: "Point",
@@ -186,6 +193,7 @@ async function deviceEvent(payload) {
               pressure: pressure,
               humidity: humidity,
               position: point,
+              water_level: water_level,
               address: address[0].formattedAddress,
             },
             {
@@ -199,15 +207,7 @@ async function deviceEvent(payload) {
             )
             .catch((err) => console.error(err));
         }
-      } else if (
-        payload.data.LAT1 !== undefined &&
-        payload.data.LNG1 !== undefined &&
-        payload.data.WL1 !== undefined
-      ) {
-        console.log("WATER LEVEL TEST");
       }
-    } else {
-      console.log("is Undefined");
     }
   });
 }
@@ -241,7 +241,7 @@ async function updateDevice(payload) {
           res.rows[0].data.RA1 !== undefined &&
           res.rows[0].data.RR1 !== undefined
         ) {
-          var temperature, pressure, humidity, altitude;
+          var temperature, pressure, humidity, altitude, water_level;
           if (res.rows[0].data.TMP1 !== undefined)
             temperature = res.rows[0].data.TMP1.value;
           else temperature = null;
@@ -254,6 +254,9 @@ async function updateDevice(payload) {
           if (res.rows[0].data.ALT1 !== undefined)
             altitude = res.rows[0].data.ALT1.value;
           else altitude = null;
+          if (res.rows[0].data.WL1 !== undefined)
+            water_level = res.rows[0].data.WL1.value;
+          else water_level = null;
 
           let point = {
             type: "Point",
@@ -288,6 +291,7 @@ async function updateDevice(payload) {
                 pressure: pressure,
                 humidity: humidity,
                 position: point,
+                water_level: water_level,
                 address: address[0].formattedAddress,
               },
               {
@@ -315,6 +319,7 @@ async function updateDevice(payload) {
               pressure: pressure,
               humidity: humidity,
               position: point,
+              water_level: water_level,
               deviceID: res.rows[0].deviceID,
               tenantID: res.rows[0].tenantID,
               username: user.username,
