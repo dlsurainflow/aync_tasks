@@ -2,7 +2,7 @@ const moment = require("moment");
 const fetch = require("node-fetch");
 const mqtt = require("mqtt");
 const base64 = require("base-64");
-const jsonFix = require("json-fixer");
+const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 const dost_base_uri =
   "http://philsensors.asti.dost.gov.ph/index.php?r=site/get-data&stationid=";
@@ -234,7 +234,7 @@ async function retrieveARG() {
         );
 
         if (timestamp.isAfter(currentEventTime))
-          dataPublisher(
+          await dataPublisher(
             arg[i].deviceID,
             arg[i].username,
             arg[i].password,
@@ -242,7 +242,7 @@ async function retrieveARG() {
             data
           );
       } else {
-        dataPublisher(
+        await dataPublisher(
           arg[i].deviceID,
           arg[i].username,
           arg[i].password,
@@ -299,7 +299,7 @@ async function retrieveARG() {
         // console.log(currentEventTime);
         // console.log(timestamp);
         if (timestamp.isAfter(currentEventTime))
-          dataPublisher(
+          await dataPublisher(
             arg[i].deviceID,
             arg[i].username,
             arg[i].password,
@@ -307,7 +307,7 @@ async function retrieveARG() {
             data
           );
       } else {
-        dataPublisher(
+        await dataPublisher(
           arg[i].deviceID,
           arg[i].username,
           arg[i].password,
@@ -316,11 +316,13 @@ async function retrieveARG() {
         );
       }
     }
+    await delay(2500);
   }
 }
 
 async function retrieveWLMS() {
   for (var i = 0; i < wlms.length; i++) {
+    console.log(wlms[i].id);
     data = {};
     //   var res = axios.get(dost_base_uri + wlms[i].id);
     var response = await fetch(dost_base_uri + wlms[i].id, {
@@ -386,7 +388,7 @@ async function retrieveWLMS() {
         );
 
         if (timestamp.isAfter(currentEventTime))
-          dataPublisher(
+          await dataPublisher(
             wlms[i].deviceID,
             wlms[i].username,
             wlms[i].password,
@@ -394,7 +396,7 @@ async function retrieveWLMS() {
             data
           );
       } else {
-        dataPublisher(
+        await dataPublisher(
           wlms[i].deviceID,
           wlms[i].username,
           wlms[i].password,
@@ -449,7 +451,7 @@ async function retrieveWLMS() {
         // console.log(currentEventTime);
         // console.log(timestamp);
         if (timestamp.isAfter(currentEventTime))
-          dataPublisher(
+          await dataPublisher(
             wlms[i].deviceID,
             wlms[i].username,
             wlms[i].password,
@@ -457,7 +459,7 @@ async function retrieveWLMS() {
             data
           );
       } else {
-        dataPublisher(
+        await dataPublisher(
           wlms[i].deviceID,
           wlms[i].username,
           wlms[i].password,
@@ -466,6 +468,7 @@ async function retrieveWLMS() {
         );
       }
     }
+    await delay(2500);
   }
 }
 
@@ -544,7 +547,7 @@ async function retrieveWLMS_ARG() {
         );
 
         if (timestamp.isAfter(currentEventTime))
-          dataPublisher(
+          await dataPublisher(
             wlms_arg[i].deviceID,
             wlms_arg[i].username,
             wlms_arg[i].password,
@@ -552,7 +555,7 @@ async function retrieveWLMS_ARG() {
             data
           );
       } else {
-        dataPublisher(
+        await dataPublisher(
           wlms_arg[i].deviceID,
           wlms_arg[i].username,
           wlms_arg[i].password,
@@ -613,7 +616,7 @@ async function retrieveWLMS_ARG() {
         // console.log(currentEventTime);
         // console.log(timestamp);
         if (timestamp.isAfter(currentEventTime))
-          dataPublisher(
+          await dataPublisher(
             wlms_arg[i].deviceID,
             wlms_arg[i].username,
             wlms_arg[i].password,
@@ -621,7 +624,7 @@ async function retrieveWLMS_ARG() {
             data
           );
       } else {
-        dataPublisher(
+        await dataPublisher(
           wlms_arg[i].deviceID,
           wlms_arg[i].username,
           wlms_arg[i].password,
@@ -630,6 +633,7 @@ async function retrieveWLMS_ARG() {
         );
       }
     }
+    await delay(2500);
   }
 }
 
@@ -653,5 +657,6 @@ async function dataPublisher(deviceID, username, password, stream_id, data) {
     console.log("Connected!");
     client.publish(stream_id, JSON.stringify(payload));
     client.end();
+    await delay(2500);
   });
 }
