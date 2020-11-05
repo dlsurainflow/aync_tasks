@@ -1,9 +1,9 @@
 const { User, RAFT, Report, ReportHistory, Vote } = require("./models");
 const Sequelize = require("sequelize");
 const Op = Sequelize.Op;
-const { Pool, Client } = require("pg");
-const moment = require("moment");
-const report = require("./models/report");
+// const { Pool, Client } = require("pg");
+// const moment = require("moment");
+// const report = require("./models/report");
 
 async function archiveReport() {
   var reports = await Report.findAndCountAll({
@@ -15,8 +15,6 @@ async function archiveReport() {
   });
   console.log("Date: " + new Date(new Date() - 6 * 60 * 60 * 1000));
   console.log("Report Count: ", reports.count);
-  //   console.log("Report 0:" + JSON.stringify(reports.rows[0]));
-  //   console.log("Report 0 ID: " + reports.rows[0].id);
   if (reports.count !== 0) {
     for (var i = 0; i < reports.count; i++) {
       var upvote = await Vote.findAndCountAll({
@@ -58,5 +56,24 @@ async function archiveReport() {
   }
 }
 
-// setInterval(archiveReport, 10000);
+async function archiveRAFT() {
+  var raft = await RAFT.findAndCountAll({
+    where: {
+      updatedAt: {
+        [Op.lt]: new Date(new Date() - 12 * 60 * 60 * 1000),
+      },
+    },
+  });
+  console.log("Date: " + new Date(new Date() - 6 * 60 * 60 * 1000));
+  console.log("RAFT Count: ", raft.count);
+  if (raft.count !== 0) {
+    for (var i = 0; i < raft.count; i++) {
+      await RAFT.destroy({ where: { id: raft.rows[i].id } });
+    }
+  }
+}
+
 setInterval(archiveReport, 300000);
+setInterval(archiveRAFT, 300000);
+archiveReport();
+archiveRAFT();
