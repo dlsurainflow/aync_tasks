@@ -1,9 +1,9 @@
 const { User, RAFT, Report, ReportHistory, Vote } = require("./models");
 const Sequelize = require("sequelize");
 const Op = Sequelize.Op;
-const { Pool, Client } = require("pg");
-const moment = require("moment");
-const report = require("./models/report");
+const { Client } = require("pg");
+// const moment = require("moment");
+// const report = require("./models/report");
 const NodeGeocoder = require("node-geocoder");
 
 const options = {
@@ -120,13 +120,18 @@ async function deviceEvent(payload) {
             crs: { type: "name", properties: { name: "EPSG:4326" } },
           };
 
-          const address = await geocoder.reverse({
-            lat: payload.data.LAT1.value,
-            lon: payload.data.LNG1.value,
-          });
+          try {
+            const address = await geocoder.reverse({
+              lat: payload.data.LAT1.value,
+              lon: payload.data.LNG1.value,
+            });
+            // console.log("Address: ", address[0]
+            var _address = address[0].formattedAddress;
+          } catch (err) {
+            var _address = null;
+          }
 
-          // console.log("Address: ", address);
-          // console.log("Address: ", address[0].formattedAddress);
+          // console.log("Address: ",.formattedAddress);
 
           RAFT.create({
             latitude: payload.data.LAT1.value,
@@ -142,7 +147,7 @@ async function deviceEvent(payload) {
             tenantID: payload.tenantID,
             username: user.username,
             position: point,
-            address: address[0].formattedAddress,
+            address: _address,
             water_level: water_level,
           })
             .then((res) =>
@@ -173,10 +178,10 @@ async function deviceEvent(payload) {
             crs: { type: "name", properties: { name: "EPSG:4326" } },
           };
 
-          const address = await geocoder.reverse({
-            lat: payload.data.LAT1.value,
-            lon: payload.data.LNG1.value,
-          });
+          // const address = await geocoder.reverse({
+          //   lat: payload.data.LAT1.value,
+          //   lon: payload.data.LNG1.value,
+          // });
 
           // console.log("Address: ", address);
           // console.log("Address: ", address[0].formattedAddress);
@@ -194,7 +199,7 @@ async function deviceEvent(payload) {
               humidity: humidity,
               position: point,
               water_level: water_level,
-              address: address[0].formattedAddress,
+              // address: address[0].formattedAddress,
             },
             {
               where: { id: raft.id },
@@ -271,10 +276,10 @@ async function updateDevice(payload) {
             where: { deviceID: payload.deviceID },
           });
 
-          const address = await geocoder.reverse({
-            lat: res.rows[0].data.LAT1.value,
-            lon: res.rows[0].data.LNG1.value,
-          });
+          // const address = await geocoder.reverse({
+          //   lat: res.rows[0].data.LAT1.value,
+          //   lon: res.rows[0].data.LNG1.value,
+          // });
           // console.log("Address: ", address);
           // console.log("Address: ", address[0].formattedAddress);
 
@@ -292,7 +297,7 @@ async function updateDevice(payload) {
                 humidity: humidity,
                 position: point,
                 water_level: water_level,
-                address: address[0].formattedAddress,
+                // address: address[0].formattedAddress,
               },
               {
                 where: { id: raft.id },
@@ -308,6 +313,15 @@ async function updateDevice(payload) {
             let user = await User.findOne({
               where: { tenantID: res.rows[0].tenantID },
             });
+            try {
+              const address = await geocoder.reverse({
+                lat: res.rows[0].data.LAT1.value,
+                lon: res.rows[0].data.LNG1.value,
+              });
+              _address = address[0].formattedAddress;
+            } catch (err) {
+              _address = null;
+            }
             RAFT.create({
               latitude: res.rows[0].data.LAT1.value,
               longitude: res.rows[0].data.LNG1.value,
@@ -323,7 +337,7 @@ async function updateDevice(payload) {
               deviceID: res.rows[0].deviceID,
               tenantID: res.rows[0].tenantID,
               username: user.username,
-              address: address[0].formattedAddress,
+              address: _address,
             })
               .then((res) =>
                 console.log(

@@ -160,80 +160,90 @@ retrieveWLMS();
 async function retrieveARG() {
   for (var i = 0; i < arg.length; i++) {
     data = {};
-    //   var res = axios.get(dost_base_uri + arg[i].id);
-    var response = await fetch(dost_base_uri + arg[i].id, {
-      method: "get",
-    });
-    var res = await response.json();
-    var timestamp = new moment(
-      res.Data[res.Data.length - 1]["Datetime Read"],
-      "YYYY-MM-DD HH:mm:ss"
-    );
-    var previous = new moment(
-      res.Data[res.Data.length - 2]["Datetime Read"],
-      "YYYY-MM-DD HH:mm:ss"
-    );
-
-    var duration = moment.duration(timestamp.diff(previous));
-    var minutes = parseInt(duration.asMinutes()) % 60;
-
-    if (res.Data[res.Data.length - 1]["Air Pressure"] !== undefined) {
-      //   console.log(
-      //     "RR1: ",
-      //     (parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]) * 60) /
-      //       minutes
-      //   );
-      //   console.log(parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]));
-      //   console.log(minutes);
-      data = {
-        LAT1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].latitude),
-        },
-        LNG1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].longitude),
-        },
-        FD1: {
-          time: timestamp.unix(),
-          value: 0,
-        },
-        RA1: {
-          time: timestamp.unix(),
-          value: parseFloat(res.Data[res.Data.length - 1]["Rain Cumulative"]),
-        },
-        RR1: {
-          time: timestamp.unix(),
-          value:
-            (parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]) *
-              60) /
-            minutes,
-        },
-        PR1: {
-          time: timestamp.unix(),
-          value: parseFloat(res.Data[res.Data.length - 1]["Air Pressure"]),
-        },
-      };
-
-      var _response = await fetch(
-        `https://dashboard.rainflow.live/api/v1/devices/${arg[i].device_id}/last_data_charts`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
-          },
-        }
+    console.log(arg[i].id);
+    try {
+      //   var res = axios.get(dost_base_uri + arg[i].id);
+      var response = await fetch(dost_base_uri + arg[i].id, {
+        method: "get",
+      });
+      var res = await response.json();
+      var timestamp = new moment(
+        res.Data[res.Data.length - 1]["Datetime Read"],
+        "YYYY-MM-DD HH:mm:ss"
       );
-      var _res = await _response.json();
-      if (_res[1].chartData !== null) {
-        // console.log(_res[0].chartData.time);
+      var previous = new moment(
+        res.Data[res.Data.length - 2]["Datetime Read"],
+        "YYYY-MM-DD HH:mm:ss"
+      );
 
-        var currentEventTime = new moment(
-          _res[1].chartData.time,
-          "YYYY-MM-DD HH:mm:ss"
+      var duration = moment.duration(timestamp.diff(previous));
+      var minutes = parseInt(duration.asMinutes()) % 60;
+
+      if (res.Data[res.Data.length - 1]["Air Pressure"] !== undefined) {
+        //   console.log(
+        //     "RR1: ",
+        //     (parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]) * 60) /
+        //       minutes
+        //   );
+        //   console.log(parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]));
+        //   console.log(minutes);
+        data = {
+          LAT1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].latitude),
+          },
+          LNG1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].longitude),
+          },
+          FD1: {
+            time: timestamp.unix(),
+            value: 0,
+          },
+          RA1: {
+            time: timestamp.unix(),
+            value: parseFloat(res.Data[res.Data.length - 1]["Rain Cumulative"]),
+          },
+          RR1: {
+            time: timestamp.unix(),
+            value:
+              (parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]) *
+                60) /
+              minutes,
+          },
+          PR1: {
+            time: timestamp.unix(),
+            value: parseFloat(res.Data[res.Data.length - 1]["Air Pressure"]),
+          },
+        };
+
+        var _response = await fetch(
+          `https://dashboard.rainflow.live/api/v1/devices/${arg[i].device_id}/last_data_charts`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
+            },
+          }
         );
+        var _res = await _response.json();
+        if (_res[1].chartData !== null) {
+          // console.log(_res[0].chartData.time);
 
-        if (timestamp.isAfter(currentEventTime))
+          var currentEventTime = new moment(
+            _res[1].chartData.time,
+            "YYYY-MM-DD HH:mm:ss"
+          );
+
+          if (timestamp.isAfter(currentEventTime))
+            await dataPublisher(
+              arg[i].deviceID,
+              arg[i].username,
+              arg[i].password,
+              arg[i].stream_id,
+              data
+            );
+        } else {
           await dataPublisher(
             arg[i].deviceID,
             arg[i].username,
@@ -241,64 +251,64 @@ async function retrieveARG() {
             arg[i].stream_id,
             data
           );
-      } else {
-        await dataPublisher(
-          arg[i].deviceID,
-          arg[i].username,
-          arg[i].password,
-          arg[i].stream_id,
-          data
-        );
-      }
-    } else {
-      data = {
-        LAT1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].latitude),
-        },
-        LNG1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].longitude),
-        },
-        FD1: {
-          time: timestamp.unix(),
-          value: 0,
-        },
-        RA1: {
-          time: timestamp.unix(),
-          value: parseFloat(res.Data[res.Data.length - 1]["Rain Cumulative"]),
-        },
-        RR1: {
-          time: timestamp.unix(),
-          value:
-            (parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]) *
-              60) /
-            minutes,
-        },
-      };
-
-      var _response = await fetch(
-        `https://dashboard.rainflow.live/api/v1/devices/${arg[i].device_id}/last_data_charts`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
-          },
         }
-      );
-      var _res = await _response.json();
-      //   console.log(_res[1]);
-      if (_res[1].chartData !== null) {
-        // console.log(_res[0].chartData.time);
+      } else {
+        data = {
+          LAT1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].latitude),
+          },
+          LNG1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].longitude),
+          },
+          FD1: {
+            time: timestamp.unix(),
+            value: 0,
+          },
+          RA1: {
+            time: timestamp.unix(),
+            value: parseFloat(res.Data[res.Data.length - 1]["Rain Cumulative"]),
+          },
+          RR1: {
+            time: timestamp.unix(),
+            value:
+              (parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]) *
+                60) /
+              minutes,
+          },
+        };
 
-        var currentEventTime = new moment(
-          _res[1].chartData.time,
-          "YYYY-MM-DD HH:mm:ss"
+        var _response = await fetch(
+          `https://dashboard.rainflow.live/api/v1/devices/${arg[i].device_id}/last_data_charts`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
+            },
+          }
         );
+        var _res = await _response.json();
+        //   console.log(_res[1]);
+        if (_res[1].chartData !== null) {
+          // console.log(_res[0].chartData.time);
 
-        // console.log(currentEventTime);
-        // console.log(timestamp);
-        if (timestamp.isAfter(currentEventTime))
+          var currentEventTime = new moment(
+            _res[1].chartData.time,
+            "YYYY-MM-DD HH:mm:ss"
+          );
+
+          // console.log(currentEventTime);
+          // console.log(timestamp);
+          if (timestamp.isAfter(currentEventTime))
+            await dataPublisher(
+              arg[i].deviceID,
+              arg[i].username,
+              arg[i].password,
+              arg[i].stream_id,
+              data
+            );
+        } else {
           await dataPublisher(
             arg[i].deviceID,
             arg[i].username,
@@ -306,15 +316,10 @@ async function retrieveARG() {
             arg[i].stream_id,
             data
           );
-      } else {
-        await dataPublisher(
-          arg[i].deviceID,
-          arg[i].username,
-          arg[i].password,
-          arg[i].stream_id,
-          data
-        );
+        }
       }
+    } catch (err) {
+      console.error(err);
     }
     await delay(2500);
   }
@@ -324,70 +329,79 @@ async function retrieveWLMS() {
   for (var i = 0; i < wlms.length; i++) {
     console.log(wlms[i].id);
     data = {};
-    //   var res = axios.get(dost_base_uri + wlms[i].id);
-    var response = await fetch(dost_base_uri + wlms[i].id, {
-      method: "get",
-    });
-    var res = await response.json();
-    var timestamp = new moment(
-      res.Data[res.Data.length - 1]["Datetime Read"],
-      "YYYY-MM-DD HH:mm:ss"
-    );
-    var previous = new moment(
-      res.Data[res.Data.length - 2]["Datetime Read"],
-      "YYYY-MM-DD HH:mm:ss"
-    );
-
-    var duration = moment.duration(timestamp.diff(previous));
-    var minutes = parseInt(duration.asMinutes()) % 60;
-
-    if (res.Data[res.Data.length - 1]["Air Pressure"] !== undefined) {
-      data = {
-        LAT1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].latitude),
-        },
-        LNG1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].longitude),
-        },
-        WL1: {
-          time: timestamp.unix(),
-          value: parseFloat(res.Data[res.Data.length - 1]["Waterlevel"]),
-        },
-        RA1: {
-          time: timestamp.unix(),
-          value: 0,
-        },
-        RR1: {
-          time: timestamp.unix(),
-          value: 0,
-        },
-        PR1: {
-          time: timestamp.unix(),
-          value: parseFloat(res.Data[res.Data.length - 1]["Air Pressure"]),
-        },
-      };
-
-      var _response = await fetch(
-        `https://dashboard.rainflow.live/api/v1/devices/${wlms[i].device_id}/last_data_charts`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
-          },
-        }
+    try {
+      //   var res = axios.get(dost_base_uri + wlms[i].id);
+      var response = await fetch(dost_base_uri + wlms[i].id, {
+        method: "get",
+      });
+      var res = await response.json();
+      var timestamp = new moment(
+        res.Data[res.Data.length - 1]["Datetime Read"],
+        "YYYY-MM-DD HH:mm:ss"
       );
-      var _res = await _response.json();
-      if ((_res[1].chartData !== undefined && _res[1].chartData) !== null) {
-        // console.log(_res[0].chartData.time);
+      var previous = new moment(
+        res.Data[res.Data.length - 2]["Datetime Read"],
+        "YYYY-MM-DD HH:mm:ss"
+      );
 
-        var currentEventTime = new moment(
-          _res[1].chartData.time,
-          "YYYY-MM-DD HH:mm:ss"
+      var duration = moment.duration(timestamp.diff(previous));
+      var minutes = parseInt(duration.asMinutes()) % 60;
+
+      if (res.Data[res.Data.length - 1]["Air Pressure"] !== undefined) {
+        data = {
+          LAT1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].latitude),
+          },
+          LNG1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].longitude),
+          },
+          WL1: {
+            time: timestamp.unix(),
+            value: parseFloat(res.Data[res.Data.length - 1]["Waterlevel"]),
+          },
+          RA1: {
+            time: timestamp.unix(),
+            value: 0,
+          },
+          RR1: {
+            time: timestamp.unix(),
+            value: 0,
+          },
+          PR1: {
+            time: timestamp.unix(),
+            value: parseFloat(res.Data[res.Data.length - 1]["Air Pressure"]),
+          },
+        };
+
+        var _response = await fetch(
+          `https://dashboard.rainflow.live/api/v1/devices/${wlms[i].device_id}/last_data_charts`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
+            },
+          }
         );
+        var _res = await _response.json();
+        if ((_res[1].chartData !== undefined && _res[1].chartData) !== null) {
+          // console.log(_res[0].chartData.time);
 
-        if (timestamp.isAfter(currentEventTime))
+          var currentEventTime = new moment(
+            _res[1].chartData.time,
+            "YYYY-MM-DD HH:mm:ss"
+          );
+
+          if (timestamp.isAfter(currentEventTime))
+            await dataPublisher(
+              wlms[i].deviceID,
+              wlms[i].username,
+              wlms[i].password,
+              wlms[i].stream_id,
+              data
+            );
+        } else {
           await dataPublisher(
             wlms[i].deviceID,
             wlms[i].username,
@@ -395,62 +409,62 @@ async function retrieveWLMS() {
             wlms[i].stream_id,
             data
           );
-      } else {
-        await dataPublisher(
-          wlms[i].deviceID,
-          wlms[i].username,
-          wlms[i].password,
-          wlms[i].stream_id,
-          data
-        );
-      }
-    } else {
-      data = {
-        LAT1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].latitude),
-        },
-        LNG1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].longitude),
-        },
-        RA1: {
-          time: timestamp.unix(),
-          value: 0,
-        },
-        RR1: {
-          time: timestamp.unix(),
-          value: 0,
-        },
-        WL1: {
-          time: timestamp.unix(),
-          value: parseFloat(res.Data[res.Data.length - 1]["Waterlevel"]),
-        },
-      };
-
-      var _response = await fetch(
-        `https://dashboard.rainflow.live/api/v1/devices/${wlms[i].device_id}/last_data_charts`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
-          },
         }
-      );
-      var _res = await _response.json();
-      //   console.log(_res);
-      //   console.log(_res[1]);
-      if ((_res[1].chartData !== undefined && _res[1].chartData) !== null) {
-        // console.log(_res[0].chartData.time);
+      } else {
+        data = {
+          LAT1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].latitude),
+          },
+          LNG1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].longitude),
+          },
+          RA1: {
+            time: timestamp.unix(),
+            value: 0,
+          },
+          RR1: {
+            time: timestamp.unix(),
+            value: 0,
+          },
+          WL1: {
+            time: timestamp.unix(),
+            value: parseFloat(res.Data[res.Data.length - 1]["Waterlevel"]),
+          },
+        };
 
-        var currentEventTime = new moment(
-          _res[1].chartData.time,
-          "YYYY-MM-DD HH:mm:ss"
+        var _response = await fetch(
+          `https://dashboard.rainflow.live/api/v1/devices/${wlms[i].device_id}/last_data_charts`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
+            },
+          }
         );
+        var _res = await _response.json();
+        //   console.log(_res);
+        //   console.log(_res[1]);
+        if ((_res[1].chartData !== undefined && _res[1].chartData) !== null) {
+          // console.log(_res[0].chartData.time);
 
-        // console.log(currentEventTime);
-        // console.log(timestamp);
-        if (timestamp.isAfter(currentEventTime))
+          var currentEventTime = new moment(
+            _res[1].chartData.time,
+            "YYYY-MM-DD HH:mm:ss"
+          );
+
+          // console.log(currentEventTime);
+          // console.log(timestamp);
+          if (timestamp.isAfter(currentEventTime))
+            await dataPublisher(
+              wlms[i].deviceID,
+              wlms[i].username,
+              wlms[i].password,
+              wlms[i].stream_id,
+              data
+            );
+        } else {
           await dataPublisher(
             wlms[i].deviceID,
             wlms[i].username,
@@ -458,15 +472,10 @@ async function retrieveWLMS() {
             wlms[i].stream_id,
             data
           );
-      } else {
-        await dataPublisher(
-          wlms[i].deviceID,
-          wlms[i].username,
-          wlms[i].password,
-          wlms[i].stream_id,
-          data
-        );
+        }
       }
+    } catch (err) {
+      console.error(err);
     }
     await delay(2500);
   }
@@ -474,79 +483,89 @@ async function retrieveWLMS() {
 
 async function retrieveWLMS_ARG() {
   for (var i = 0; i < wlms_arg.length; i++) {
-    // console.log(wlms_arg[i]);
+    console.log(wlms_arg[i].id);
     data = {};
-    //   var res = axios.get(dost_base_uri + wlms_arg[i].id);
-    var response = await fetch(dost_base_uri + wlms_arg[i].id, {
-      method: "get",
-    });
-    var res = await response.json();
-    var timestamp = new moment(
-      res.Data[res.Data.length - 1]["Datetime Read"],
-      "YYYY-MM-DD HH:mm:ss"
-    );
-    var previous = new moment(
-      res.Data[res.Data.length - 2]["Datetime Read"],
-      "YYYY-MM-DD HH:mm:ss"
-    );
-
-    var duration = moment.duration(timestamp.diff(previous));
-    var minutes = parseInt(duration.asMinutes()) % 60;
-    // console.log(res.Data[res.Data.length - 1]);
-    if (res.Data[res.Data.length - 1]["Air Pressure"] !== undefined) {
-      data = {
-        LAT1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].latitude),
-        },
-        LNG1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].longitude),
-        },
-        FD1: {
-          time: timestamp.unix(),
-          value: 0,
-        },
-        RA1: {
-          time: timestamp.unix(),
-          value: parseFloat(res.Data[res.Data.length - 1]["Rain Cumulative"]),
-        },
-        RR1: {
-          time: timestamp.unix(),
-          value:
-            (parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]) *
-              60) /
-            minutes,
-        },
-        WL1: {
-          time: timestamp.unix(),
-          value: parseFloat(res.Data[res.Data.length - 1].Waterlevel),
-        },
-        PR1: {
-          time: timestamp.unix(),
-          value: parseFloat(res.Data[res.Data.length - 1]["Air Pressure"]),
-        },
-      };
-
-      var _response = await fetch(
-        `https://dashboard.rainflow.live/api/v1/devices/${wlms_arg[i].device_id}/last_data_charts`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
-          },
-        }
+    try {
+      //   var res = axios.get(dost_base_uri + wlms_arg[i].id);
+      var response = await fetch(dost_base_uri + wlms_arg[i].id, {
+        method: "get",
+      });
+      var res = await response.json();
+      var timestamp = new moment(
+        res.Data[res.Data.length - 1]["Datetime Read"],
+        "YYYY-MM-DD HH:mm:ss"
       );
-      var _res = await _response.json();
-      if (_res[1].chartData !== null) {
-        // console.log(_res[0].chartData.time);
+      var previous = new moment(
+        res.Data[res.Data.length - 2]["Datetime Read"],
+        "YYYY-MM-DD HH:mm:ss"
+      );
 
-        var currentEventTime = new moment(
-          _res[1].chartData.time,
-          "YYYY-MM-DD HH:mm:ss"
+      var duration = moment.duration(timestamp.diff(previous));
+      var minutes = parseInt(duration.asMinutes()) % 60;
+      // console.log(res.Data[res.Data.length - 1]);
+
+      if (res.Data[res.Data.length - 1]["Air Pressure"] !== undefined) {
+        data = {
+          LAT1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].latitude),
+          },
+          LNG1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].longitude),
+          },
+          FD1: {
+            time: timestamp.unix(),
+            value: 0,
+          },
+          RA1: {
+            time: timestamp.unix(),
+            value: parseFloat(res.Data[res.Data.length - 1]["Rain Cumulative"]),
+          },
+          RR1: {
+            time: timestamp.unix(),
+            value:
+              (parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]) *
+                60) /
+              minutes,
+          },
+          WL1: {
+            time: timestamp.unix(),
+            value: parseFloat(res.Data[res.Data.length - 1].Waterlevel),
+          },
+          PR1: {
+            time: timestamp.unix(),
+            value: parseFloat(res.Data[res.Data.length - 1]["Air Pressure"]),
+          },
+        };
+
+        var _response = await fetch(
+          `https://dashboard.rainflow.live/api/v1/devices/${wlms_arg[i].device_id}/last_data_charts`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
+            },
+          }
         );
+        var _res = await _response.json();
+        if (_res[1].chartData !== null) {
+          // console.log(_res[0].chartData.time);
 
-        if (timestamp.isAfter(currentEventTime))
+          var currentEventTime = new moment(
+            _res[1].chartData.time,
+            "YYYY-MM-DD HH:mm:ss"
+          );
+
+          if (timestamp.isAfter(currentEventTime))
+            await dataPublisher(
+              wlms_arg[i].deviceID,
+              wlms_arg[i].username,
+              wlms_arg[i].password,
+              wlms_arg[i].stream_id,
+              data
+            );
+        } else {
           await dataPublisher(
             wlms_arg[i].deviceID,
             wlms_arg[i].username,
@@ -554,68 +573,68 @@ async function retrieveWLMS_ARG() {
             wlms_arg[i].stream_id,
             data
           );
-      } else {
-        await dataPublisher(
-          wlms_arg[i].deviceID,
-          wlms_arg[i].username,
-          wlms_arg[i].password,
-          wlms_arg[i].stream_id,
-          data
-        );
-      }
-    } else {
-      data = {
-        LAT1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].latitude),
-        },
-        LNG1: {
-          time: timestamp.unix(),
-          value: parseFloat(res["0"].longitude),
-        },
-        FD1: {
-          time: timestamp.unix(),
-          value: 0,
-        },
-        RA1: {
-          time: timestamp.unix(),
-          value: parseFloat(res.Data[res.Data.length - 1]["Rain Cumulative"]),
-        },
-        RR1: {
-          time: timestamp.unix(),
-          value:
-            (parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]) *
-              60) /
-            minutes,
-        },
-        WL1: {
-          time: timestamp.unix(),
-          value: parseFloat(res.Data[res.Data.length - 1]["Waterlevel"]),
-        },
-      };
-
-      var _response = await fetch(
-        `https://dashboard.rainflow.live/api/v1/devices/${wlms_arg[i].device_id}/last_data_charts`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
-          },
         }
-      );
-      var _res = await _response.json();
-      //   console.log(_res[1]);
-      if (_res[1].chartData !== null) {
-        // console.log(_res[0].chartData.time);
+      } else {
+        data = {
+          LAT1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].latitude),
+          },
+          LNG1: {
+            time: timestamp.unix(),
+            value: parseFloat(res["0"].longitude),
+          },
+          FD1: {
+            time: timestamp.unix(),
+            value: 0,
+          },
+          RA1: {
+            time: timestamp.unix(),
+            value: parseFloat(res.Data[res.Data.length - 1]["Rain Cumulative"]),
+          },
+          RR1: {
+            time: timestamp.unix(),
+            value:
+              (parseFloat(res.Data[res.Data.length - 1]["Rainfall Amount"]) *
+                60) /
+              minutes,
+          },
+          WL1: {
+            time: timestamp.unix(),
+            value: parseFloat(res.Data[res.Data.length - 1]["Waterlevel"]),
+          },
+        };
 
-        var currentEventTime = new moment(
-          _res[1].chartData.time,
-          "YYYY-MM-DD HH:mm:ss"
+        var _response = await fetch(
+          `https://dashboard.rainflow.live/api/v1/devices/${wlms_arg[i].device_id}/last_data_charts`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: "Basic " + base64.encode(AppID + ":" + AppToken),
+            },
+          }
         );
+        var _res = await _response.json();
+        //   console.log(_res[1]);
+        if (_res[1].chartData !== null) {
+          // console.log(_res[0].chartData.time);
 
-        // console.log(currentEventTime);
-        // console.log(timestamp);
-        if (timestamp.isAfter(currentEventTime))
+          var currentEventTime = new moment(
+            _res[1].chartData.time,
+            "YYYY-MM-DD HH:mm:ss"
+          );
+
+          // console.log(currentEventTime);
+          // console.log(timestamp);
+          if (timestamp.isAfter(currentEventTime))
+            await dataPublisher(
+              wlms_arg[i].deviceID,
+              wlms_arg[i].username,
+              wlms_arg[i].password,
+              wlms_arg[i].stream_id,
+              data
+            );
+        } else {
           await dataPublisher(
             wlms_arg[i].deviceID,
             wlms_arg[i].username,
@@ -623,15 +642,10 @@ async function retrieveWLMS_ARG() {
             wlms_arg[i].stream_id,
             data
           );
-      } else {
-        await dataPublisher(
-          wlms_arg[i].deviceID,
-          wlms_arg[i].username,
-          wlms_arg[i].password,
-          wlms_arg[i].stream_id,
-          data
-        );
+        }
       }
+    } catch (err) {
+      console.error(err);
     }
     await delay(2500);
   }
@@ -654,9 +668,10 @@ async function dataPublisher(deviceID, username, password, stream_id, data) {
 
   var client = mqtt.connect("mqtt://rainflow.live", options);
   client.on("connect", async function () {
-    console.log("Connected!");
+    console.log(deviceID, " Connected!");
     client.publish(stream_id, JSON.stringify(payload));
     client.end();
+    console.log(deviceID, " Disconnected!");
     await delay(2500);
   });
 }
