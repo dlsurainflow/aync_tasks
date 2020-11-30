@@ -68,7 +68,7 @@ async function archiveRAFT() {
   console.log("RAFT Count: ", raft.count);
   if (raft.count !== 0) {
     for (var i = 0; i < raft.count; i++) {
-      await RAFT.destroy({ where: { id: raft.rows[i].id } });
+      await RAFT.update({ display: 0 }, { where: { id: raft.rows[i].id } });
     }
   }
 }

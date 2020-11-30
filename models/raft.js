@@ -29,6 +29,7 @@ module.exports = (sequelize, DataTypes) => {
       position: DataTypes.GEOMETRY("POINT", 4326),
       address: DataTypes.STRING,
       water_level: DataTypes.FLOAT,
+      display: DataTypes.INTEGER,
     },
     {
       sequelize,
