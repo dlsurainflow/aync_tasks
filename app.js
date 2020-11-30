@@ -86,7 +86,7 @@ async function deviceEvent(payload) {
     if (err) throw err;
 
     //console.log("showOnMap =", res.rows[0].showOnMap);
-    // console.log(res.rows[0]);
+    console.log(res.rows[0]);
     var isShowOnMap = res.rows[0];
     // console.log(isShowOnMap);
     if (isShowOnMap !== undefined) {
@@ -149,6 +149,7 @@ async function deviceEvent(payload) {
             position: point,
             address: _address,
             water_level: water_level,
+            createdAt: res.rows[0].createAt,
           })
             .then((res) =>
               console.log(
@@ -199,6 +200,7 @@ async function deviceEvent(payload) {
               humidity: humidity,
               position: point,
               water_level: water_level,
+              createdAt: res.rows[0].createAt,
               // address: address[0].formattedAddress,
             },
             {
