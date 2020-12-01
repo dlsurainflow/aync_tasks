@@ -45,6 +45,8 @@ async function archiveReport() {
         userID: reports.rows[i].userID,
         createdAt: reports.rows[i].createdAt,
         updatedAt: reports.rows[i].updatedAt,
+        address: reports.rows[i].address,
+        description: reports.rows[i].description,
       });
 
       await Report.destroy({ where: { id: reports.rows[i].id } });
