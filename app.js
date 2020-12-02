@@ -85,7 +85,7 @@ async function updateUser(payload) {
 }
 
 async function deviceEvent(payload) {
-  console.log(payload);
+  // console.log(payload);
   var raft = await RAFT.findOne({ where: { deviceID: payload.deviceID } });
   var user = await User.findOne({ where: { tenantID: payload.tenantID } });
 
@@ -140,7 +140,7 @@ async function deviceEvent(payload) {
             var _address = null;
           }
 
-          console.log("Address: ", address[0].formattedAddress);
+          // console.log("Address: ", address[0].formattedAddress);
 
           // Filtering Algorithm
           var sql_FD1 = `select data.value->'time' as time, data.value->'value' as value from "device_events", jsonb_each(device_events.data) AS data  where "deviceID" = '${payload.deviceID}' and data.key = 'FD1' and "msgTime" > current_date - interval '6' hour;`;
@@ -162,7 +162,7 @@ async function deviceEvent(payload) {
               ((payload.data.FD1.value - sma[sma.length - 2]) /
                 sma[sma.length - 2]) *
               100;
-            console.log(difference);
+            // console.log(difference);
             if (difference > 100) certainty = 0;
             else certainty = 1;
           }
@@ -233,7 +233,7 @@ async function deviceEvent(payload) {
               ((payload.data.FD1.value - sma[sma.length - 2]) /
                 sma[sma.length - 2]) *
               100;
-            console.log(difference);
+            // console.log(difference);
             if (difference > 100) certainty = 0;
             else certainty = 1;
           }
