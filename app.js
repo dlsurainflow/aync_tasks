@@ -1,7 +1,7 @@
 const { User, RAFT, Report, ReportHistory, Vote } = require("./models");
 const Sequelize = require("sequelize");
 const Op = Sequelize.Op;
-const { Client } = require("pg");
+const { Client, Pool } = require("pg");
 // const moment = require("moment");
 // const report = require("./models/report");
 const NodeGeocoder = require("node-geocoder");
@@ -13,6 +13,14 @@ const options = {
 const geocoder = NodeGeocoder(options);
 
 const client = new Client({
+  user: "tammy",
+  host: "RainFLOW.live",
+  database: "actorcloud",
+  password: "Inmediasres8!",
+  port: 5432,
+});
+
+const pool = new Pool({
   user: "tammy",
   host: "RainFLOW.live",
   database: "actorcloud",
@@ -77,16 +85,17 @@ async function updateUser(payload) {
 }
 
 async function deviceEvent(payload) {
+  // console.log(payload);
   var raft = await RAFT.findOne({ where: { deviceID: payload.deviceID } });
   var user = await User.findOne({ where: { tenantID: payload.tenantID } });
 
   var sql = `SELECT * FROM devices where "deviceID" = '${payload.deviceID}' AND "showOnMap" = 1`;
 
-  await client.query(sql, async (err, res) => {
+  await pool.query(sql, async (err, res) => {
     if (err) throw err;
 
     //console.log("showOnMap =", res.rows[0].showOnMap);
-    console.log(res.rows[0]);
+    // console.log(res.rows[0]);
     var isShowOnMap = res.rows[0];
     // console.log(isShowOnMap);
     if (isShowOnMap !== undefined) {
@@ -131,7 +140,32 @@ async function deviceEvent(payload) {
             var _address = null;
           }
 
-          // console.log("Address: ",.formattedAddress);
+          // console.log("Address: ", address[0].formattedAddress);
+
+          // Filtering Algorithm
+          var sql_FD1 = `select data.value->'time' as time, data.value->'value' as value from "device_events", jsonb_each(device_events.data) AS data  where "deviceID" = '${payload.deviceID}' and data.key = 'FD1' and "msgTime" > current_date - interval '6' hour;`;
+          var FD1_Past = await pool.query(sql_FD1);
+          var window_size = 1;
+          var sma_vec = ComputeSMA(FD1_Past.rows, window_size);
+          let sma = sma_vec.map(function (val) {
+            return val["avg"];
+          });
+
+          var certainty;
+
+          if (sma[sma.length - 2] < 1 && payload.data.FD1.value <= 5) {
+            certainty = 1;
+          } else if (sma[sma.length - 2] < 1 && payload.data.FD1.value > 5) {
+            certainty = 0;
+          } else {
+            var difference =
+              ((payload.data.FD1.value - sma[sma.length - 2]) /
+                sma[sma.length - 2]) *
+              100;
+            // console.log(difference);
+            if (difference > 100) certainty = 0;
+            else certainty = 1;
+          }
 
           RAFT.create({
             latitude: payload.data.LAT1.value,
@@ -150,6 +184,7 @@ async function deviceEvent(payload) {
             address: _address,
             water_level: water_level,
             createdAt: res.rows[0].createAt,
+            certainty: certainty,
           })
             .then((res) =>
               console.log(
@@ -179,6 +214,32 @@ async function deviceEvent(payload) {
             crs: { type: "name", properties: { name: "EPSG:4326" } },
           };
 
+          // Filtering Algorithm
+          var sql_FD1 = `select data.value->'time' as time, data.value->'value' as value from "device_events", jsonb_each(device_events.data) AS data  where "deviceID" = '${payload.deviceID}' and data.key = 'FD1' and "msgTime" > current_date - interval '6' hour;`;
+          var FD1_Past = await pool.query(sql_FD1);
+          var window_size = 1;
+          var sma_vec = ComputeSMA(FD1_Past.rows, window_size);
+          let sma = sma_vec.map(function (val) {
+            return val["avg"];
+          });
+          var certainty;
+
+          if (sma[sma.length - 2] < 1 && payload.data.FD1.value <= 5) {
+            certainty = 1;
+          } else if (sma[sma.length - 2] < 1 && payload.data.FD1.value > 5) {
+            certainty = 0;
+          } else {
+            var difference =
+              ((payload.data.FD1.value - sma[sma.length - 2]) /
+                sma[sma.length - 2]) *
+              100;
+            // console.log(difference);
+            if (difference > 100) certainty = 0;
+            else certainty = 1;
+          }
+
+          // console.log(certainty);
+
           // const address = await geocoder.reverse({
           //   lat: payload.data.LAT1.value,
           //   lon: payload.data.LNG1.value,
@@ -201,6 +262,7 @@ async function deviceEvent(payload) {
               position: point,
               water_level: water_level,
               createdAt: res.rows[0].createAt,
+              certainty: certainty,
               // address: address[0].formattedAddress,
             },
             {
@@ -352,4 +414,19 @@ async function updateDevice(payload) {
       }
     });
   }
+}
+
+function ComputeSMA(data, window_size) {
+  let r_avgs = [],
+    avg_prev = 0;
+  for (let i = 0; i <= data.length - window_size; i++) {
+    let curr_avg = 0.0,
+      t = i + window_size;
+    for (let k = i; k < t && k <= data.length; k++) {
+      curr_avg += data[k]["value"] / window_size;
+    }
+    r_avgs.push({ set: data.slice(i, i + window_size), avg: curr_avg });
+    avg_prev = curr_avg;
+  }
+  return r_avgs;
 }

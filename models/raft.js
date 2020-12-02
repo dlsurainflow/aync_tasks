@@ -30,6 +30,7 @@ module.exports = (sequelize, DataTypes) => {
       address: DataTypes.STRING,
       water_level: DataTypes.FLOAT,
       display: DataTypes.INTEGER,
+      certainty: DataTypes.INTEGER,
     },
     {
       sequelize,
